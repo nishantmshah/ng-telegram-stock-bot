@@ -1,0 +1,90 @@
+<button routerLink="/">Go back</button>
+<input type="number" [(ngModel)]="interval" (ngModelChange)="createUpdater()">
+
+<h2>
+    Bot inbox
+    <span *ngIf="lastUpdates > 0">(New {{ lastUpdates }})</span>
+</h2>
+
+<div *ngIf="bot">
+    <h4>{{ bot | tgUser }} (@{{ bot.username }})</h4>
+
+    <div *ngFor="let chat of bot.chats">
+        <input type="checkbox"> {{ chat | tgChat }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Chat</th>
+                <th>@</th>
+                <th>From</th>
+                <th>@</th>
+                <th>Text</th>
+                <th>Reply</th>
+                <th>Forward</th>
+                <th>@</th>
+                <th>Date</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <tr *ngFor="let message of bot.messages.slice().reverse()">
+                <td>{{ message.message_id }}</td>
+                <td>{{ (message.date * 1000) | date: 'y.MM.dd' }}</td>
+                <td>{{ (message.date * 1000) | date: 'HH:mm:ss' }}</td>
+                
+                <td><b>{{ message.chat | tgChat }}</b></td>
+                <td><b *ngIf="message.chat.username">@{{ message.chat.username }}</b></td>
+
+                <td><u *ngIf="message.from">{{ message.from | tgUser }}</u></td>
+                <td><u *ngIf="message.from?.username">@{{ message.from.username }}</u></td>
+
+                <td [ngSwitch]="true">
+                    <div *ngSwitchCase="!!message.text">{{ message.text }}</div>
+                    
+                    <div *ngSwitchCase="!!message.photo">
+                        <tg-photo [bot]="bot" [photo]="message.photo" [caption]="message.caption"></tg-photo>
+                    </div>
+                    
+                    <div *ngSwitchCase="!!message.sticker">
+                        <strong>{{ message.sticker.emoji || '(Emoji)' }}</strong>
+                        <span *ngIf="message.sticker.set_name">&nbsp;(@{{ message.sticker.set_name }})</span>
+                    </div>
+                    
+                    <div *ngSwitchDefault>
+                        <strong>Unsupported message</strong>
+                        <pre>{{ message | prettyJson }}</pre>
+                    </div>
+                </td>
+
+                <td><span *ngIf="message.reply_to_message?.from">
+                    &gt;&gt; <b>{{ message.reply_to_message.from | tgUser }}</b>
+                    {{ message.reply_to_message.text }}
+                </span></td>
+
+                <td><span *ngIf="message.forward_date">
+                    &lt;&lt;
+                    <b *ngIf="message.forward_from_chat">{{ message.forward_from_chat | tgChat }}</b>
+                    <u *ngIf="message.forward_from">{{ message.forward_from | tgUser }}</u>
+                </span></td>
+
+                <td><span *ngIf="message.forward_date">
+                    <b *ngIf="message.forward_from_chat?.username">@{{ message.forward_from_chat.username }}</b>
+                    <u *ngIf="message.forward_from?.username">@{{ message.forward_from.username }}</u>
+                </span></td>
+
+                <td><span *ngIf="message.forward_date">{{ (message.forward_date * 1000) | date: 'y.MM.dd' }}</span></td>
+                <td><span *ngIf="message.forward_date">{{ (message.forward_date * 1000) | date: 'HH:mm:ss' }}</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <tr *ngIf="!bot.messages.length">
+        <td colspan="13">No incoming messages!</td>
+    </tr>
+</div>
